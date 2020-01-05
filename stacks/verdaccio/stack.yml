@@ -1,0 +1,50 @@
+version: '3.4'
+
+x-basic-replicated: &basic-replicated
+  mode: replicated
+  restart_policy:
+    condition: any
+    delay: 5s
+  update_config:
+    order: start-first
+    failure_action: rollback
+    delay: 3s
+    monitor: 5s
+
+services:
+  verdaccio:
+    image: verdaccio/verdaccio:4
+    command: >-
+      /opt/verdaccio/bin/verdaccio
+      --listen http://0.0.0.0:4873
+      --config /verdaccio/config.yml
+    environment:
+      VERDACCIO_USER_UID: '10001'
+    networks:
+      - traefik
+    volumes:
+      - storage:/verdaccio/storage
+    configs:
+      - source: teamopen_verdaccio.v1.yml
+        target: /verdaccio/config.yml
+        uid: '10001'
+        gid: '10001'
+        mode: 0400
+    deploy:
+      <<: *basic-replicated
+      replicas: 1
+      labels:
+        traefik.enable: "true"
+        traefik.port: 4873
+        traefik.frontend.rule: "Host: npm.bserv.teamopen.dev"
+
+volumes:
+  storage:
+
+configs:
+  teamopen_verdaccio.v1.yml:
+    external: true
+
+networks:
+  traefik:
+    external: true

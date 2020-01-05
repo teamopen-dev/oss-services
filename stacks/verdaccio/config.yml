@@ -1,0 +1,40 @@
+storage: /verdaccio/storage
+# Note: minio storage plugin could be useful for HA?
+
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+    cache: false
+  cache-npmjs:
+    url: https://registry.npmjs.org/
+    cache: true
+
+x-cache: &cache
+  access: $all
+  proxy: cache-npmjs
+
+packages:
+  'sourcecred':
+    <<: *cache
+  '@sourcecred/*':
+    <<: *cache
+
+  '**':
+    access: $all
+    proxy: npmjs
+
+middlewares:
+  audit:
+    enabled: true
+
+auth:
+  htpasswd:
+    file: /verdaccio/htpasswd
+    max_users: -1
+
+logs:
+  - {type: stdout, format: pretty, level: http}
+
+web:
+  enable: true
+  title: Shared NPM Cache
